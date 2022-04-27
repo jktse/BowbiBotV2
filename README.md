@@ -1,2 +1,2 @@
 # BowbiBotV2
-This is kind of the second iteration. The first one was writen using JavaScript specifically with Discord.js. This time I want to use python as well as without a library to make a barebones implementation. However I am using REST to make the calls rather than relaying on libraries. This is more for my learning than making it functional.
+This is the second iteration of BowbiBot. The first one was a speghetti code filled bot, rather than rewriting and understanding what I did (I did not comments) I thought it would be better to rewrite it in a more structured method. As well as add appropriate code so I know what is happening in the future.
