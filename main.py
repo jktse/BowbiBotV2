@@ -1,28 +1,22 @@
 import os
 import discord
+from discord.ext import commands
 from dotenv import load_dotenv
 
-
+# Load the Bot Token, this is important as it tells Discord API who we are
 load_dotenv()
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
-client = discord.Client()
-@client.event
-async def on_ready():
-    
-    print(f'{client.user} has connected to Discord!')
+# Intents are used to determine what the bot is allowed to do
+intents = discord.Intents.default()
+# bot is going to be the main callback that will await commands or instructions
+bot = commands.Bot(command_prefix='!', intents=intents)
 
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    print(message.content)
-    if message.content.startswith('hello'):
-        await message.channel.send('Hello!')
+bot.load_extension("help") # Path to the file, instead of using a slash use a period
 
 class Application():
-    # 
-    client.run(BOT_TOKEN)
+    # This tells the application to boot up
+    bot.run(BOT_TOKEN)
     
 
 def main():
