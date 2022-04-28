@@ -1,5 +1,4 @@
 # This file is mainly to contain the code for a random dice roll.
-import nextcord
 from nextcord.ext import commands
 
 class Roll(commands.Cog, name="Roll"):
@@ -10,7 +9,7 @@ class Roll(commands.Cog, name="Roll"):
 
     @commands.command()
     async def roll(self, ctx: commands.Context):
-        """ Rolls a given amount of dice in the form _d_
+        """ Rolls a given amount of dice in the form \_d\_
 
         Example: !roll 2d6
         This is asking for 2 dice rolls of a 6 sided dice

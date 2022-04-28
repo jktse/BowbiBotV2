@@ -12,8 +12,7 @@ intents = nextcord.Intents.default()
 # bot is going to be the main callback that will await commands or instructions
 bot = commands.Bot(command_prefix='!', intents=intents)
 
-bot.load_extension("help") # Path to the file remember that use dot to replace slashes and if there are none it automatically assumes .py
-
+# Path to the file remember that use dot to replace slashes and if there are none it automatically assumes .py
 for folder in os.listdir("modules"):
     if os.path.exists(os.path.join("modules", folder, "cog.py")):
         bot.load_extension(f"modules.{folder}.cog")
