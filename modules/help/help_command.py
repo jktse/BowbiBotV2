@@ -7,13 +7,49 @@
 # !help roll (contains a command within a cog, display information only about the command)  -> send_command_help
 
 from typing import Optional, Set
+from click import option
 from nextcord.ext import commands
 from nextcord import Embed
+import nextcord
+
+class HelpDropdown(nextcord.ui.Select):
+    def __init__(self, help_command: "MyHelpCommand", options: list[nextcord.SelectOption]):
+        super().__init__(placeholder="Choose a category...", min_values=1, max_values=1, options=options)
+        self._help_command = help_command
+
+    async def callback(self, interaction: nextcord.Interaction):
+        embed = self._help_command.cog_help_embed(self._help_command.context.bot.get_cog(self.values[0]))
+        await interaction.response.edit_message(embed=embed)
+
+class HelpView(nextcord.ui.View):
+    def __init__(self, help_command: "MyHelpCommand", options: list[nextcord.SelectOption], *, timeout: Optional[float] = 120.0):
+        super().__init__(timeout=timeout)
+        self.add_item(HelpDropdown(help_command, options))
+        self._help_command = help_command
+    
+    async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
+        return self._help_command.context.author == interaction.user
+
+
+
 
 class MyHelpCommand(commands.MinimalHelpCommand):
     def get_command_signature(self, command):
         # clean_prefix is the prefix we need, qualified name is the command name, signature is how you call the command
         return f"{self.context.clean_prefix} {command.qualified_name} {command.signature}"
+
+    async def _cog_select_option(self) -> list[nextcord.SelectOption]:
+        options: list[nextcord.SelectOption] = []
+
+        for cog, command_set in self.get_bot_mapping().items():
+            filtered = await self.filter_commands(command_set, sort=True)
+            if not filtered:
+                continue
+            options.append(nextcord.SelectOption(
+                label = cog.qualified_name if cog else "No Category",
+                description = cog.description[:100] if cog and cog.description else None,
+                ))
+        return options
 
     # This helps us format the help message into an embeded object which looks nicer when the bot prints a message
     async def _help_embed(
@@ -64,7 +100,8 @@ class MyHelpCommand(commands.MinimalHelpCommand):
             mapping = mapping
         )
         # Send the embed to where the user messaged for the help
-        await self.get_destination().send(embed=embed)
+        options = await self._cog_select_option()
+        await self.get_destination().send(embed=embed, view=HelpView(self, options))
 
     async def send_command_help(self, command: commands.Command):
         # Generate the embed for commands
@@ -75,12 +112,14 @@ class MyHelpCommand(commands.MinimalHelpCommand):
             command_set=command.commands if isinstance(command, commands.Group) else None
         )
         await self.get_destination().send(embed=embed)
-    
-    async def send_cog_help(self, cog: commands.Command):
-        # Go throught the cog and output all the commands within the set
-        embed = await self._help_embed(
+
+    async def cog_help_embed(self, cog: commands.Cog) -> Embed:
+        return await self._help_embed(
             title=cog.qualified_name,
             description=cog.description,
             command_set=cog.get_commands()
         )
-        await self.get_destination().send(embed=embed)
+    
+    async def send_cog_help(self, cog: commands.Command):
+        # Go throught the cog and output all the commands within the set
+        await self.get_destination().send(embed=self.cog_help_embed(cog))
