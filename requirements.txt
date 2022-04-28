@@ -1,2 +1,2 @@
-discord.py==1.7.3
+nextcord==2.0.0a10
 python-dotenv==0.20.0
