@@ -1,5 +1,5 @@
 # This file contains the code to modify nextcord (discord.py) built in help commands
-# Code references from: https://gist.github.com/InterStella0/b78488fb28cadf279dfd3164b9f0cf96#brief
+# Code references from: https://gist.github.com/InterStella0/b78488fb28cadf279dfd3164b9f0cf96
 # We expect 3 kinds of input from the user
 # !help (contains not argument we need to output all the cogs(groups of commands), and commands (found in each grouping of cogs)) -> send_bot_help
 # !help Roll (contains a cog which is a group of commands (also the class name) will display all the commands under this group) -> send_cog_help

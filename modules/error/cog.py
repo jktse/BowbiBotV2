@@ -1,4 +1,5 @@
 # This file is mainly to contain the code for error handeling
+# Code from: https://gist.github.com/EvieePy/7822af90858ef65012ea500bcecf1612
 import nextcord
 import traceback
 import sys
@@ -19,8 +20,6 @@ class CommandErrorHandler(commands.Cog):
         error: commands.CommandError
             The Exception raised.
         """
-        
-        print("in error handler")
 
         # This prevents any commands with local handlers being handled here in on_command_error.
         if hasattr(ctx.command, 'on_error'):
@@ -38,7 +37,7 @@ class CommandErrorHandler(commands.Cog):
         # If nothing is found. We keep the exception passed to on_command_error.
         error = getattr(error, 'original', error)
 
-        # Anything in ignored will return and prevent anything happening.
+        # If command not found or does not exists we tell the user that
         if isinstance(error, ignored):
             await ctx.send(error.args[0])
             return
