@@ -6,6 +6,7 @@
 # !help Roll (contains a cog which is a group of commands (also the class name) will display all the commands under this group) -> send_cog_help
 # !help roll (contains a command within a cog, display information only about the command)  -> send_command_help
 
+from multiprocessing.sharedctypes import Value
 from typing import Optional, Set
 from click import option
 from nextcord.ext import commands
@@ -18,7 +19,12 @@ class HelpDropdown(nextcord.ui.Select):
         self._help_command = help_command
 
     async def callback(self, interaction: nextcord.Interaction):
-        embed = self._help_command.cog_help_embed(self._help_command.context.bot.get_cog(self.values[0]))
+        embed = (
+            await self._help_command.cog_help_embed(self._help_command.context.bot.get_cog(self.values[0]))
+            if self.values[0] != self.options[0].value
+            else await self._help_command.bot_help_embed(self._help_command.get_bot_mapping())
+
+        )
         await interaction.response.edit_message(embed=embed)
 
 class HelpView(nextcord.ui.View):
@@ -26,6 +32,10 @@ class HelpView(nextcord.ui.View):
         super().__init__(timeout=timeout)
         self.add_item(HelpDropdown(help_command, options))
         self._help_command = help_command
+
+    async def on_timeout(self) -> None:
+        self.clear_items()
+        await self._help_command.response.edit(view=self)
     
     async def interaction_check(self, interaction: nextcord.Interaction) -> bool:
         return self._help_command.context.author == interaction.user
@@ -40,13 +50,20 @@ class MyHelpCommand(commands.MinimalHelpCommand):
 
     async def _cog_select_option(self) -> list[nextcord.SelectOption]:
         options: list[nextcord.SelectOption] = []
+        options.append(nextcord.SelectOption(
+            label="Home",
+            emoji="🏠",
+            description="Go back to homepage"
+        ))
 
         for cog, command_set in self.get_bot_mapping().items():
             filtered = await self.filter_commands(command_set, sort=True)
             if not filtered:
                 continue
+            emoji = getattr(cog, "COG_EMOJI", None)
             options.append(nextcord.SelectOption(
                 label = cog.qualified_name if cog else "No Category",
+                emoji=emoji,
                 description = cog.description[:100] if cog and cog.description else None,
                 ))
         return options
@@ -54,7 +71,8 @@ class MyHelpCommand(commands.MinimalHelpCommand):
     # This helps us format the help message into an embeded object which looks nicer when the bot prints a message
     async def _help_embed(
         self, title: str, description: Optional[str] = None, mapping: Optional[dict] = None,
-        command_set: Optional[Set[commands.Command]] = None):
+        command_set: Optional[Set[commands.Command]] = None
+        ) -> Embed:
         embed = Embed(title=title)
         if description:
             embed.description = description
@@ -76,6 +94,8 @@ class MyHelpCommand(commands.MinimalHelpCommand):
                 if not filtered:
                     continue
                 name = cog.qualified_name if cog else "No category"
+                emoji = getattr(cog, "COG_EMOJI", None)
+                cog_label = f"{emoji} {name}" if emoji else name
                 # \u2002 is an en-space
                 # Will give us a list of commands separated by a space that the use is allowed to use in the current cog
                 cmd_list = "\u2002".join(
@@ -88,38 +108,45 @@ class MyHelpCommand(commands.MinimalHelpCommand):
                     else cmd_list
                 )
                 # We add the cog to the embed and its coresponding commands.
-                embed.add_field(name=name, value=value)
+                embed.add_field(name=cog_label, value=value)
         return embed
 
-    # This is the return statement when user types !help with not parameters (Thus we need to return all the commands and cogs)
-    async def send_bot_help(self, mapping: dict):
-        # Generate the embed for this call.
-        embed = await self._help_embed(
+    async def bot_help_embed(self, mapping: dict) -> Embed:
+        # Returns Embed
+        return await self._help_embed(
             title="Bot Commands",
             description=self.context.bot.description,
             mapping = mapping
         )
+
+    # This is the return statement when user types !help with not parameters (Thus we need to return all the commands and cogs)
+    async def send_bot_help(self, mapping: dict):
+        # Generate the embed for this call.
+        embed = await self.bot_help_embed(mapping)
         # Send the embed to where the user messaged for the help
         options = await self._cog_select_option()
-        await self.get_destination().send(embed=embed, view=HelpView(self, options))
+        self.response = await self.get_destination().send(embed=embed, view=HelpView(self, options))
 
     async def send_command_help(self, command: commands.Command):
         # Generate the embed for commands
         # command.help will check for the comments under the command
+        emoji = getattr(command.cog, "COG_EMOJI", None)
         embed = await self._help_embed(
-            title=command.qualified_name,
+            title=f"{emoji} {command.qualified_name}" if emoji else command.qualified_name,
             description=command.help,
             command_set=command.commands if isinstance(command, commands.Group) else None
         )
         await self.get_destination().send(embed=embed)
 
     async def cog_help_embed(self, cog: commands.Cog) -> Embed:
+        emoji = getattr(cog, "COG_EMOJI", None)
         return await self._help_embed(
-            title=cog.qualified_name,
+            title=f"{emoji} {cog.qualified_name}" if emoji else cog.qualified_name,
             description=cog.description,
             command_set=cog.get_commands()
         )
     
     async def send_cog_help(self, cog: commands.Command):
         # Go throught the cog and output all the commands within the set
-        await self.get_destination().send(embed=self.cog_help_embed(cog))
+        embed = await self.cog_help_embed(cog)
+        await self.get_destination().send(embed=embed)
