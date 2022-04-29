@@ -1,2 +1,5 @@
 # Environment Files
 *.env
+
+# Python Files
+__pycache__
