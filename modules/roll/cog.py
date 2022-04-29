@@ -4,6 +4,8 @@ from nextcord.ext import commands
 class Roll(commands.Cog, name="Roll"):
     """Recieves roll commands"""
 
+    COG_EMOJI = "🎲"
+
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 

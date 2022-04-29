@@ -4,6 +4,8 @@ from .help_command import MyHelpCommand
 class HelpCog(commands.Cog):
     """Shows help info about commands"""
 
+    COG_EMOJI = "❔"
+
     def __init__(self, bot):
         self._original_help_command = bot.help_command
         bot.help_command = MyHelpCommand()
