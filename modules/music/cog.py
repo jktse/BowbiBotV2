@@ -1,6 +1,7 @@
 # This file is mainly to contain the code for a random dice roll.
 from attr import has
 import nextcord
+import asyncio
 from nextcord.ext import commands
 import youtube_dl
 
@@ -24,6 +25,27 @@ ffmpeg_options = {
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
 
+class YTDLSource(nextcord.PCMVolumeTransformer):
+    def __init__(self, source, *, data, volume=0.5):
+        super().__init__(source, volume)
+
+        self.data = data
+
+        self.title = data.get('title')
+        self.url = data.get('url')
+
+    @classmethod
+    async def from_url(cls, url, *, loop=None, stream=False):
+        loop = loop or asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=not stream))
+
+        if 'entries' in data:
+            # take first item from a playlist
+            data = data['entries'][0]
+
+        filename = data['url'] if stream else ytdl.prepare_filename(data)
+        return cls(nextcord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data)
+
 
 class Music(commands.Cog, name="Music"):
     """All commands related to music playback"""
@@ -38,11 +60,14 @@ class Music(commands.Cog, name="Music"):
         """Joins the voice channel of the one who invoked the join command"""
 
         channel = ctx.author.voice.channel
-
         if ctx.voice_client is not None:
             return await ctx.voice_client.move_to(channel)
-
         await channel.connect()
+    
+    @commands.command()
+    async def leave(self, ctx):
+        """The bot will leave the channel it is in"""
+        await ctx.voice_client.disconnect()
     
 
     @commands.command(aliases=['a'])
@@ -53,6 +78,16 @@ class Music(commands.Cog, name="Music"):
         Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ
         """
         await ctx.send("something")
+
+    @commands.command()
+    async def stream(self, ctx, *, url):
+        """Streams from a url (same as yt, but doesn't predownload)"""
+
+        async with ctx.typing():
+            player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
+            ctx.voice_client.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+
+        await ctx.send(f'Now playing: {player.title}')
 
 
 def setup(bot: commands.Bot):
