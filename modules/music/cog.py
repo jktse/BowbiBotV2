@@ -74,6 +74,7 @@ class Music(commands.Cog, name="Music"):
     async def add(self, ctx: commands.Context, arg):
         """ Adds the given youtube link to a queue to be played back
 
+
         Code checks for valid youtube link before adding it to the queue.
         Example: https://www.youtube.com/watch?v=dQw4w9WgXcQ
         """
