@@ -4,14 +4,6 @@ import nextcord
 from nextcord.ext import commands
 import youtube_dl
 
-try:
-    import nacl.secret  # type: ignore
-    has_nacl = True
-except ImportError:
-    has_nacl = False
-
-print(has_nacl)
-
 ytdl_format_options = {
     'format': 'bestaudio/best',
     'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
@@ -47,8 +39,8 @@ class Music(commands.Cog, name="Music"):
 
         channel = ctx.author.voice.channel
 
-        #if ctx.voice_client is not None:
-            #return await ctx.voice_client.move_to(channel)
+        if ctx.voice_client is not None:
+            return await ctx.voice_client.move_to(channel)
 
         await channel.connect()
     
