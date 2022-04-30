@@ -5,7 +5,7 @@ from nextcord.ext import commands
 import youtube_dl
 
 try:
-    import nacl.secret  # type: ignore
+    import nacl  # type: ignore
     has_nacl = True
 except ImportError:
     has_nacl = False
