@@ -8,7 +8,6 @@
 
 from multiprocessing.sharedctypes import Value
 from typing import Optional, Set
-from click import option
 from nextcord.ext import commands
 from nextcord import Embed
 import nextcord
