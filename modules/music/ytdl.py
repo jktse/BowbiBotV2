@@ -3,7 +3,7 @@ import nextcord
 import youtube_dl
 
 # Suppress noise about console usage from errors
-youtube_dl.utils.bug_reports_message = lambda: ''
+# youtube_dl.utils.bug_reports_message = lambda: ''
 
 
 ytdl_format_options = {
