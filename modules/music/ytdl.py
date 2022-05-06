@@ -5,18 +5,10 @@ import youtube_dl
 
 from nextcord.ext import commands
 
-# Silence useless bug reports messages
 youtube_dl.utils.bug_reports_message = lambda: ''
-
-token = open("token.txt", "r").read()
-
-class VoiceError(Exception):
-    pass
-
 
 class YTDLError(Exception):
     pass
-
 
 class YTDLSource(nextcord.PCMVolumeTransformer):
     YTDL_OPTIONS = {
@@ -69,6 +61,7 @@ class YTDLSource(nextcord.PCMVolumeTransformer):
 
     @classmethod
     async def create_source(cls, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
+        cls.ytdl.cache.remove()
         loop = loop or asyncio.get_event_loop()
 
         partial = functools.partial(cls.ytdl.extract_info, search, download=False, process=False)
@@ -109,7 +102,7 @@ class YTDLSource(nextcord.PCMVolumeTransformer):
         return cls(ctx, nextcord.FFmpegPCMAudio(info['url'], **cls.FFMPEG_OPTIONS), data=info)
 
     @classmethod
-    async def search_source(cls, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
+    async def search_source(cls, bot: commands.Bot, ctx: commands.Context, search: str, *, loop: asyncio.BaseEventLoop = None):
         channel = ctx.channel
         loop = loop or asyncio.get_event_loop()
 
