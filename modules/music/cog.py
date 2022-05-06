@@ -18,15 +18,6 @@ class Music(commands.Cog):
         await channel.connect()
 
     @commands.command()
-    async def play(self, ctx, *, query):
-        """Plays a file from the local filesystem"""
-
-        source = nextcord.PCMVolumeTransformer(nextcord.FFmpegPCMAudio(query))
-        ctx.voice_client.play(source, after=lambda e: print(f'Player error: {e}') if e else None)
-
-        await ctx.send(f'Now playing: {query}')
-
-    @commands.command()
     async def yt(self, ctx, *, url):
         """Plays from a url (almost anything youtube_dl supports)"""
 
@@ -53,7 +44,7 @@ class Music(commands.Cog):
         if ctx.voice_client is None:
             return await ctx.send("Not connected to a voice channel.")
 
-        ctx.voice_client.source.volume = volume / 100
+        ctx.voice_client.volume = volume / 100
         await ctx.send(f"Changed volume to {volume}%")
 
     @commands.command()
@@ -62,7 +53,6 @@ class Music(commands.Cog):
 
         await ctx.voice_client.disconnect()
 
-    @play.before_invoke
     @yt.before_invoke
     @stream.before_invoke
     async def ensure_voice(self, ctx):
