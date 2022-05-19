@@ -1,3 +1,8 @@
+# This file contains method to help with music playback.
+# The class song is there to help facilitate the creation of the song's embed making it clear what is currently being played
+# SongQueue is the main queue class where the songs are all loaded into.
+# The VoiceState is the class that contains information about what kind of parameters the next song playback will have
+# TODO Since voice states controls the properties of the next song any volume changes will affect next songs and not current
 import asyncio
 import itertools
 import random

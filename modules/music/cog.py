@@ -1,5 +1,6 @@
-# This file is mainly to contain the code for music playback.
+# This file is mainly to contain the code for music playback. This entire file contains code for commands initiated by users
 # Code is based off the example found here: https://gist.github.com/Lenart12/024222b63db38c65f68b57ae7e623d56
+
 import nextcord
 import math
 from nextcord.ext import commands
@@ -222,7 +223,6 @@ class Music(commands.Cog):
         """Plays a song.
         If there are songs in the queue, this will be queued until the
         other songs finished playing.
-        This command automatically searches from various sites if no URL is provided.
         A list of these sites can be found here: https://rg3.github.io/youtube-dl/supportedsites.html
         """
 
