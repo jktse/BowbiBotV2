@@ -1,5 +1,8 @@
 # Environment Files
 *.env
+.venv
+env/
+venv/
 
 # Python Files
 __pycache__/

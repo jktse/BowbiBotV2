@@ -1,2 +1,4 @@
-nextcord==2.0.0a10
+nextcord[voice]==2.0.0a10
+PyNaCl
 python-dotenv==0.20.0
+youtube-dl==2021.12.17
