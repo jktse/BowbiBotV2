@@ -3,12 +3,22 @@
 
 import nextcord
 import math
+import os
+import urllib.request
+import json 
 from nextcord.ext import commands
 from .ytdl import YTDLSource
 from .ytdl import YTDLError
 from .voice import VoiceState
 from .voice import VoiceError
 from .voice import Song
+from dotenv import load_dotenv
+
+load_dotenv()
+GOOGLE_API = os.getenv('GOOGLE_API')
+
+YOUTUBE_PLAYLIST_ITEMS_API = "https://www.googleapis.com/youtube/v3/playlistItems"
+YOUTUBE_WATCH = "https://www.youtube.com/watch?v="
 
 
 class Music(commands.Cog):
@@ -226,18 +236,44 @@ class Music(commands.Cog):
         A list of these sites can be found here: https://rg3.github.io/youtube-dl/supportedsites.html
         """
 
-        async with ctx.typing():
-            try:
-                source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
-            except YTDLError as e:
-                await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
-            else:
-                if not ctx.voice_state.voice:
-                    await ctx.invoke(self.join)
+        if "youtube.com/playlist" in search:
+            # Get the playlist id
+            my_list = search.split("https://www.youtube.com/playlist?list=")
+            playlist_id = my_list[1]
+            next_token = None
+            keep_going = True
+            while keep_going:
+                if next_token is None:
+                    api_url = YOUTUBE_PLAYLIST_ITEMS_API + "?part=snippet&playlistId=" + playlist_id + "&maxResults=50&key=" + GOOGLE_API
+                else:
+                    api_url = YOUTUBE_PLAYLIST_ITEMS_API + "?pageToken=" + next_token + "&part=snippet&playlistId=" + playlist_id + "&maxResults=50&key=" + GOOGLE_API
+                with urllib.request.urlopen(api_url) as response:
+                    convert_response = response.read().decode('utf-8')
+                    json_obj = json.loads(convert_response)
+                    if not json_obj.get('nextPageToken') is None:
+                        next_token = json_obj['nextPageToken']
+                    else:
+                        keep_going = False
+                    for items in json_obj['items']:
+                        video_id = items['snippet']['resourceId']['videoId']
+                        youtube_url = YOUTUBE_WATCH + video_id
+                        await self.add_song(ctx, youtube_url)
+        else:
+            await self.add_song(ctx, search)
 
-                song = Song(source)
-                await ctx.voice_state.songs.put(song)
-                await ctx.send('Enqueued {}'.format(str(source)))
+    async def add_song(self, ctx: commands.Context, url: str):
+        async with ctx.typing():
+                try:
+                    source = await YTDLSource.create_source(ctx, url, loop=self.bot.loop)
+                except YTDLError as e:
+                    await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
+                else:
+                    if not ctx.voice_state.voice:
+                        await ctx.invoke(self.join)
+
+                    song = Song(source)
+                    await ctx.voice_state.songs.put(song)
+                    await ctx.send('Enqueued {}'.format(str(source)))
             
     @join.before_invoke
     @play.before_invoke
