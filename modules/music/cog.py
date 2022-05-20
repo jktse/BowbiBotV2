@@ -18,6 +18,7 @@ load_dotenv()
 GOOGLE_API = os.getenv('GOOGLE_API')
 
 YOUTUBE_PLAYLIST_ITEMS_API = "https://www.googleapis.com/youtube/v3/playlistItems"
+YOUTUBE_WATCH = "https://www.youtube.com/watch?v="
 
 
 class Music(commands.Cog):
@@ -246,7 +247,6 @@ class Music(commands.Cog):
                     api_url = YOUTUBE_PLAYLIST_ITEMS_API + "?part=snippet&playlistId=" + playlist_id + "&maxResults=50&key=" + GOOGLE_API
                 else:
                     api_url = YOUTUBE_PLAYLIST_ITEMS_API + "?pageToken=" + next_token + "&part=snippet&playlistId=" + playlist_id + "&maxResults=50&key=" + GOOGLE_API
-                print(api_url)
                 with urllib.request.urlopen(api_url) as response:
                     convert_response = response.read().decode('utf-8')
                     json_obj = json.loads(convert_response)
@@ -255,11 +255,16 @@ class Music(commands.Cog):
                     else:
                         keep_going = False
                     for items in json_obj['items']:
-                        print(items['snippet']['resourceId']['videoId'])
+                        video_id = items['snippet']['resourceId']['videoId']
+                        youtube_url = YOUTUBE_WATCH + video_id
+                        await self.add_song(ctx, youtube_url)
         else:
-            async with ctx.typing():
+            await self.add_song(ctx, search)
+
+    async def add_song(self, ctx: commands.Context, url: str):
+        async with ctx.typing():
                 try:
-                    source = await YTDLSource.create_source(ctx, search, loop=self.bot.loop)
+                    source = await YTDLSource.create_source(ctx, url, loop=self.bot.loop)
                 except YTDLError as e:
                     await ctx.send('An error occurred while processing this request: {}'.format(str(e)))
                 else:
