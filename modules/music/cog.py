@@ -245,12 +245,17 @@ class Music(commands.Cog):
                 if next_token is None:
                     api_url = YOUTUBE_PLAYLIST_ITEMS_API + "?part=snippet&playlistId=" + playlist_id + "&maxResults=50&key=" + GOOGLE_API
                 else:
-                    api_url = YOUTUBE_PLAYLIST_ITEMS_API + "?pageToken=" + next_token + "?part=snippet&playlistId=" + playlist_id + "&maxResults=50&key=" + GOOGLE_API
-            with urllib.request.urlopen(api_url) as response:
-                convert_response = response.read().decode('utf-8')
-                json_obj = json.loads(convert_response)
-                for items in json_obj['items']:
-                    print(items['snippet']['resourceId']['videoId'])
+                    api_url = YOUTUBE_PLAYLIST_ITEMS_API + "?pageToken=" + next_token + "&part=snippet&playlistId=" + playlist_id + "&maxResults=50&key=" + GOOGLE_API
+                print(api_url)
+                with urllib.request.urlopen(api_url) as response:
+                    convert_response = response.read().decode('utf-8')
+                    json_obj = json.loads(convert_response)
+                    if not json_obj.get('nextPageToken') is None:
+                        next_token = json_obj['nextPageToken']
+                    else:
+                        keep_going = False
+                    for items in json_obj['items']:
+                        print(items['snippet']['resourceId']['videoId'])
         else:
             async with ctx.typing():
                 try:
